@@ -1,0 +1,273 @@
+{
+  "name": "agent_prac",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"Summarize this AI news article into three short sentences for a WhatsApp update. Include the main takeaway and a friendly tone.give link also if i have to read whole article just in case \n\nTitle: {{ $json.title }}\nContent: {{ $json.contentSnippet }}\nLink: {{ $json.link }}\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        928,
+        -160
+      ],
+      "id": "8f59d968-edfb-410b-9059-9349780a2773",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "groq/compound-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        160
+      ],
+      "id": "a14e9aff-fd14-464c-a562-4d85772a6d36",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "v3mChJp065tah8T2",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        -160
+      ],
+      "id": "062fefa8-3e0f-49d2-a30a-b3ef409a1ec4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        -160
+      ],
+      "id": "27b5384d-f772-4bf9-9e4a-969426a0af0b",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { url: \"https://huggingface.co/blog/feed.xml\" }},\n  { json: { url: \"https://techcrunch.com/category/artificial-intelligence/feed/\" }},\n  { json: { url: \"https://openai.com/blog/rss.xml\" }},\n  { json: { url: \"https://ollama.com/blog/rss.xml\" }}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -160
+      ],
+      "id": "5f1718d0-9b2d-40e5-8c0c-ce1bd8a9caf4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f89df4b7-d9d4-48ac-b1de-efd1f56db807",
+              "leftValue": "={{ $json.isoDate }}",
+              "rightValue": "={{ $now.minus({ hours: 24 }) }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        -160
+      ],
+      "id": "77d4f059-2784-4e85-8463-f8de7e0af94d",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=1075504068979118",
+        "recipientPhoneNumber": "918112842369",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -160
+      ],
+      "id": "084bd195-fb7d-4aa7-9d0f-f38325505efe",
+      "name": "Send message",
+      "webhookId": "d2a40716-c973-4416-8c94-b7cff7e06601",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "ByFOaHyKrEjHq623",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        864,
+        176
+      ],
+      "id": "898abab1-5196-47da-a287-aeb4c86f0da3",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "i1qKpqW67Azmz5g7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 2
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -160
+      ],
+      "id": "4c1b7fb2-984b-4182-8704-7b97d118c916",
+      "name": "Limit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6628a553-b147-4cfa-90e9-7296bb09d5ef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b03db8e44d640cb4e9816a70c17945df137883d79f1a3bdb31c10b5480c8c649"
+  },
+  "id": "1FV0fxb3e4jdzRsy",
+  "tags": []
+}
